@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "159480393236",
+    "project_id": "sn-watch",
+    "storage_bucket": "sn-watch.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:159480393236:android:e8d185e9821383debbc101",
+        "android_client_info": {
+          "package_name": "com.example.sn_watch"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "159480393236-44jvogaqtrmvf9u29v2tegvd1u37drko.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.sn_watch",
+            "certificate_hash": "d8a0ee8a42c27ba4960ec4494b9cb07215f95952"
+          }
+        },
+        {
+          "client_id": "159480393236-9h691je765ve82s1jugril8uf4t0obug.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBS5LrzeH-GoTx7CBL3nkZkQCU1XXBWVxI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "159480393236-9h691je765ve82s1jugril8uf4t0obug.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "159480393236-6rfn76210552msra0ff4u3fun1l9ovdj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "sn.watch.ios"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
