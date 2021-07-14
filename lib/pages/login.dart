@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sn_watch/helper/helperfunctions.dart';
 import 'package:sn_watch/services/auth.dart';
 import 'package:sn_watch/services/database.dart';
-
 import 'home.dart';
 import 'register.dart';
 
@@ -42,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   Container(
                     alignment: Alignment.center,
-                    height: mq.height * 0.85,
+                    height: (mq.height - 50 - MediaQuery.of(context).padding.top),
                     child: ListView(
                       children: [
                         Container(
@@ -161,9 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                                         Navigator.pushAndRemoveUntil(
                                             context,
                                             CupertinoPageRoute(
-                                                builder: (context) => MyHomePage(
-                                                    title:
-                                                        "Summit Neighborhood Watch")),
+                                                builder: (context) => MyHomePage()),
                                             ModalRoute.withName("/LoginPage"));
                                       }
                                     }
@@ -223,9 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                                         Navigator.pushAndRemoveUntil(
                                             context,
                                             CupertinoPageRoute(
-                                                builder: (context) => MyHomePage(
-                                                    title:
-                                                        "Summit Neighborhood Watch")),
+                                                builder: (context) => MyHomePage()),
                                             ModalRoute.withName("/LoginPage"));
                                       }
                                     }
@@ -236,14 +231,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   Container(
-                    height: mq.height * 0.15,
-                    alignment: Alignment.centerRight,
+                    height: 50,
+                    alignment: Alignment.center,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text("Don't have an account?",
                             style:
-                                TextStyle(color: Colors.black, fontSize: 16)),
+                                TextStyle(color: Colors.black, fontSize: 17)),
                         TextButton(
                             onPressed: () async {
                               Navigator.push(
@@ -288,6 +283,7 @@ class _LoginPageState extends State<LoginPage> {
           });
           return false;
         } else {
+          FocusScope.of(context).requestFocus(FocusNode());
           final displayName = user.displayName;
           HelperFunctions.saveUserLoggedInSharedPreference(true);
           HelperFunctions.saveUIDSharedPreference(user.uid);

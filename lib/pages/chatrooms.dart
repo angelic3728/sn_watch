@@ -1,19 +1,134 @@
 import 'package:sn_watch/helper/constants.dart';
 import 'package:sn_watch/helper/helperfunctions.dart';
-import 'package:sn_watch/helper/theme.dart';
 import 'package:sn_watch/services/database.dart';
-import 'package:sn_watch/pages/chat.dart';
 import 'package:sn_watch/pages/search.dart';
 import 'package:flutter/material.dart';
+import 'package:sn_watch/widget/chatroom_tile.dart';
+import 'package:sn_watch/widget/group_tile.dart';
 
 class ChatRoom extends StatefulWidget {
   @override
   _ChatRoomState createState() => _ChatRoomState();
 }
 
-class _ChatRoomState extends State<ChatRoom> {
+class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   Stream chatRooms;
   Map<String, int> unreadMsgsObj = {};
+  TabController _tabController;
+  int _currentIndex = 0;
+  Stream _groups;
+  String _groupName;
+
+  @override
+  void initState() {
+    _tabController = TabController(vsync: this, length: 2);
+    _tabController.addListener(_handleTabSelection);
+    getUserInfogetChats();
+    _getJoinedGroups();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  _getRequests() async {
+    getUserInfogetChats();
+  }
+
+  getUserInfogetChats() async {
+    Constants.myUID = await HelperFunctions.getUIDSharedPreference();
+    unreadMsgsObj = await DatabaseMethods().getUnreadChats(Constants.myUID);
+    await DatabaseMethods().getUserChats(Constants.myUID).then((snapshots) {
+      setState(() {
+        chatRooms = snapshots;
+      });
+    });
+  }
+
+  _handleTabSelection() {
+    setState(() {
+      _currentIndex = _tabController.index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.blue[900],
+        title: new Center(child: new Text("Chat Lists")),
+        bottom: new PreferredSize(
+            preferredSize:
+                new Size(MediaQuery.of(context).size.width * .5, 40.0),
+            child: TabBar(
+              controller: _tabController,
+              indicator: UnderlineTabIndicator(
+                borderSide:
+                    BorderSide(width: 3.0, color: Colors.orangeAccent[400]),
+              ),
+              tabs: [
+                new Container(
+                    height: 40.0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        new Icon(Icons.chat_outlined),
+                        Container(
+                          padding: EdgeInsets.only(left: 3),
+                          child: new Text("Chats",
+                              style: TextStyle(color: Colors.white)),
+                        )
+                      ],
+                    )),
+                new Container(
+                    height: 40.0,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        new Icon(Icons.group_sharp),
+                        Container(
+                          padding: EdgeInsets.only(left: 3),
+                          child: new Text("Groups",
+                              style: TextStyle(color: Colors.white)),
+                        )
+                      ],
+                    )),
+              ],
+            )),
+        elevation: 0.0,
+        centerTitle: false,
+        leading: new IconButton(
+            icon: new Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context, true);
+            }),
+      ),
+      body: Center(
+        child: TabBarView(
+            controller: _tabController,
+            children: <Widget>[chatRoomsList(), groupsList()]),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: _currentIndex == 0
+            ? Colors.greenAccent[700]
+            : Colors.blueAccent[700],
+        child: Icon(
+          Icons.search,
+          size: 30,
+        ),
+        onPressed: () {
+          Navigator.of(context)
+              .push(
+                new MaterialPageRoute(builder: (_) => new Search()),
+              )
+              .then((val) => val ? _getRequests() : null);
+        },
+      ),
+    );
+  }
 
   Widget chatRoomsList() {
     return StreamBuilder(
@@ -43,147 +158,117 @@ class _ChatRoomState extends State<ChatRoom> {
     );
   }
 
-  @override
-  void initState() {
-    getUserInfogetChats();
-    super.initState();
+  // widgets
+  Widget noGroupWidget() {
+    print("no group");
+    return Container(
+        padding: EdgeInsets.symmetric(horizontal: 25.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            GestureDetector(
+                onTap: () {
+                  _popupDialog(context);
+                },
+                child: Icon(Icons.add_circle,
+                    color: Colors.grey[700], size: 75.0)),
+            SizedBox(height: 20.0),
+            Text(
+                "You've not joined any group, tap on the 'add' icon to create a group or search for groups by tapping on the search button below."),
+          ],
+        ));
   }
 
-  _getRequests() async {
-    getUserInfogetChats();
+  Widget groupsList() {
+    return StreamBuilder(
+      stream: _groups,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          if (snapshot.data['groups'] != null) {
+            // print(snapshot.data['groups'].length);
+            if (snapshot.data['groups'].length != 0) {
+              return ListView.builder(
+                  itemCount: snapshot.data['groups'].length,
+                  shrinkWrap: true,
+                  itemBuilder: (context, index) {
+                    int reqIndex = snapshot.data['groups'].length - index - 1;
+                    return GroupTile(
+                        userName: snapshot.data['userName'],
+                        groupId:
+                            _destructureId(snapshot.data['groups'][reqIndex]),
+                        groupName: _destructureName(
+                            snapshot.data['groups'][reqIndex]));
+                  });
+            } else {
+              return noGroupWidget();
+            }
+          } else {
+            return noGroupWidget();
+          }
+        } else {
+          return Center(child: CircularProgressIndicator());
+        }
+      },
+    );
   }
 
-  getUserInfogetChats() async {
-    Constants.myUID = await HelperFunctions.getUIDSharedPreference();
-    unreadMsgsObj = await DatabaseMethods().getUnreadChats(Constants.myUID);
-    await DatabaseMethods().getUserChats(Constants.myUID).then((snapshots) {
+  // functions
+  _getJoinedGroups() async {
+    await DatabaseMethods().getUserGroups(Constants.myUID).then((snapshots) {
       setState(() {
-        chatRooms = snapshots;
+        _groups = snapshots;
       });
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: new Center(
-            child: new Text("Chat Rooms", style: TextStyle(fontSize: 20))),
-        elevation: 0.0,
-        centerTitle: false,
-        actions: [
-          GestureDetector(
-            onTap: null,
-            child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.exit_to_app)),
-          )
-        ],
-      ),
-      body: Container(
-        child: chatRoomsList(),
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.search),
-        onPressed: () {
-          Navigator.of(context)
-              .push(
-                new MaterialPageRoute(builder: (_) => new Search()),
-              )
-              .then((val) => val ? _getRequests() : null);
-        },
-      ),
-    );
+  String _destructureId(String res) {
+    // print(res.substring(0, res.indexOf('_')));
+    return res.substring(0, res.indexOf('_'));
   }
-}
 
-class ChatRoomsTile extends StatelessWidget {
-  final String userName;
-  final String chatRoomId;
-  final int unreadMsgs;
-  final Function getRequests;
+  String _destructureName(String res) {
+    // print(res.substring(res.indexOf('_') + 1));
+    return res.substring(res.indexOf('_') + 1);
+  }
 
-  ChatRoomsTile(
-      {this.userName,
-      @required this.chatRoomId,
-      this.unreadMsgs,
-      this.getRequests});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context)
-            .push(
-              new MaterialPageRoute(
-                  builder: (_) => new Chat(chatRoomId: chatRoomId)),
-            )
-            .then((val) => val ? getRequests() : null);
+  void _popupDialog(BuildContext context) {
+    Widget cancelButton = TextButton(
+      child: Text("Cancel"),
+      onPressed: () {
+        Navigator.of(context).pop();
       },
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        decoration: new BoxDecoration(
-          borderRadius: new BorderRadius.circular(8.0),
-          color: Colors.orange[100],
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey[100],
-              spreadRadius: 3,
-              blurRadius: 3,
-              offset: Offset(0, 3), // changes position of shadow
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 40,
-              width: 40,
-              padding: EdgeInsets.only(top: 10),
-              decoration: BoxDecoration(
-                  color: CustomTheme.colorAccent,
-                  borderRadius: BorderRadius.circular(4)),
-              child: Text(userName.substring(0, 1).toUpperCase(),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontFamily: 'OverpassRegular',
-                      fontWeight: FontWeight.bold)),
-            ),
-            SizedBox(
-              width: 12,
-            ),
-            Text(userName,
-                textAlign: TextAlign.start,
-                style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontFamily: 'OverpassRegular',
-                    fontWeight: FontWeight.w300)),
-            (unreadMsgs != 0)
-                ? Expanded(
-                    child: Container(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          width: 25,
-                          height: 25,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                              color: Colors.redAccent[400],
-                              borderRadius: BorderRadius.circular(25)),
-                          child: Text(
-                            unreadMsgs.toString(),
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        )))
-                : Container()
-          ],
-        ),
-      ),
+    );
+    Widget createButton = TextButton(
+      child: Text("Create"),
+      onPressed: () async {
+        if (_groupName != null) {
+          await HelperFunctions.getUserNameSharedPreference().then((val) {
+            DatabaseMethods().createGroup(Constants.myUID, val, _groupName);
+          });
+          Navigator.of(context).pop();
+        }
+      },
+    );
+
+    AlertDialog alert = AlertDialog(
+      title: Text("Create a group"),
+      content: TextField(
+          onChanged: (val) {
+            _groupName = val;
+          },
+          style: TextStyle(fontSize: 15.0, height: 2.0, color: Colors.black)),
+      actions: [
+        cancelButton,
+        createButton,
+      ],
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
     );
   }
 }

@@ -1,4 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:sn_watch/helper/helperfunctions.dart';
 
 class QuestionsPage extends StatefulWidget {
   QuestionsPage({Key key, this.title}) : super(key: key);
@@ -10,27 +14,65 @@ class QuestionsPage extends StatefulWidget {
 }
 
 class _QuestionsState extends State<QuestionsPage> {
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  bool isSending = false;
+
+  var firstName;
+  var lastName;
+  var email;
+
+  var firstNameController = TextEditingController();
+  var lastNameController = TextEditingController();
+  var emailController = TextEditingController();
+  var commentController = TextEditingController();
+
+  getUserInfo() async {
+    var fullName = await HelperFunctions.getUserNameSharedPreference();
+    var userEmail = await HelperFunctions.getUserEmailSharedPreference();
+    firstNameController.text = fullName.split(" ")[0];
+    lastNameController.text = fullName.split(" ")[1];
+    emailController.text = userEmail;
+  }
+
+  @override
+  void initState() {
+    getUserInfo();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        backgroundColor: Colors.blue[500],
+        backgroundColor: Colors.blue[900],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => {
+            FocusScope.of(context).requestFocus(FocusNode()),
+            Future.delayed(const Duration(milliseconds: 200), () {
+              Navigator.of(context).pop();
+            })
+          },
+        ),
         title: new Center(
             child: new Text(widget.title, style: TextStyle(fontSize: 20))),
       ),
       body: Container(
-          padding: EdgeInsets.only(top: 10),
+          padding: EdgeInsets.only(
+              top: 10, bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ListView(
             shrinkWrap: true,
             padding: EdgeInsets.only(left: 20, right: 20),
             children: <Widget>[
               Container(
-                  margin: EdgeInsets.only(top: 20),
+                  margin: EdgeInsets.only(top: 40),
                   child: TextFormField(
-                    initialValue: '',
+                    controller: firstNameController,
                     style: new TextStyle(fontSize: 20),
                     decoration: InputDecoration(
                         labelText: 'First Name',
@@ -39,16 +81,17 @@ class _QuestionsState extends State<QuestionsPage> {
                         contentPadding: new EdgeInsets.symmetric(
                             vertical: 10.0, horizontal: 10.0),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0)),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
                         prefixIcon: Icon(
                           Icons.person,
                         ),
-                        enabled: true),
+                        enabled: false),
                   )),
               Container(
                   margin: EdgeInsets.only(top: 20),
                   child: TextFormField(
-                    initialValue: '',
+                    controller: lastNameController,
                     style: new TextStyle(fontSize: 20),
                     decoration: InputDecoration(
                         labelText: 'Last Name',
@@ -57,16 +100,16 @@ class _QuestionsState extends State<QuestionsPage> {
                         contentPadding: new EdgeInsets.symmetric(
                             vertical: 10.0, horizontal: 10.0),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0)),
+                            borderRadius: BorderRadius.circular(10.0)),
                         prefixIcon: Icon(
                           Icons.person,
                         ),
-                        enabled: true),
+                        enabled: false),
                   )),
               Container(
                   margin: EdgeInsets.only(top: 20),
                   child: TextFormField(
-                    initialValue: '',
+                    controller: emailController,
                     style: new TextStyle(fontSize: 20),
                     decoration: InputDecoration(
                         labelText: 'Email',
@@ -75,83 +118,161 @@ class _QuestionsState extends State<QuestionsPage> {
                         contentPadding: new EdgeInsets.symmetric(
                             vertical: 10.0, horizontal: 10.0),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0)),
+                            borderRadius: BorderRadius.circular(10.0)),
                         prefixIcon: Icon(
                           Icons.email,
                         ),
-                        enabled: true),
+                        enabled: false),
                   )),
               Container(
                   margin: EdgeInsets.only(top: 20),
-                  child: TextFormField(
-                    style: new TextStyle(fontSize: 20),
+                  child: TextField(
+                    controller: commentController,
                     decoration: InputDecoration(
-                        labelText: 'Phone Number',
-                        fillColor: Colors.white,
-                        filled: true,
-                        contentPadding: new EdgeInsets.symmetric(
-                            vertical: 10.0, horizontal: 10.0),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0)),
-                        prefixIcon: Icon(
-                          Icons.phone,
-                        ),
-                        enabled: true),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.blue, width: 1.0),
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide:
+                            BorderSide(color: Colors.grey[500], width: 1.0),
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      hintText: 'Comments',
+                    ),
+                    keyboardType: TextInputType.multiline,
+                    minLines: 3,
+                    maxLines: null,
                   )),
-              Container(
-                  margin: EdgeInsets.only(top: 20, bottom: 20),
-                  child: TextFormField(
-                    style: new TextStyle(fontSize: 20),
-                    decoration: InputDecoration(
-                        labelText: 'Mobile Number',
-                        fillColor: Colors.white,
-                        filled: true,
-                        contentPadding: new EdgeInsets.symmetric(
-                            vertical: 10.0, horizontal: 10.0),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20.0)),
-                        prefixIcon: Icon(
-                          Icons.phone_android,
-                        ),
-                        enabled: true),
-                  )),
-              TextField(
-                decoration: InputDecoration(
-                  
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.blue, width: 1.0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colors.grey[500], width: 1.0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  hintText: 'Comments',
-                ),
-                keyboardType: TextInputType.multiline,
-                minLines: 3,
-                maxLines: null,
-              ),
               Container(
                 margin: EdgeInsets.only(top: 20, bottom: 20),
-                child: TextButton(
-                    child: Text("Submit".toUpperCase(),
-                        style: TextStyle(fontSize: 14)),
-                    style: ButtonStyle(
-                        padding: MaterialStateProperty.all<EdgeInsets>(
-                            EdgeInsets.all(15)),
-                        foregroundColor:
-                            MaterialStateProperty.all<Color>(Colors.red),
-                        shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                child: isSending
+                    ? Container(
+                        decoration: new BoxDecoration(
+                            color: Colors.amber[900],
+                            borderRadius: new BorderRadius.circular(18.0)),
+                        padding: EdgeInsets.only(top: 5, bottom: 5),
+                        child: CupertinoActivityIndicator(
+                          radius: 20,
+                        ))
+                    : TextButton(
+                        child: Text("Submit".toUpperCase(),
+                            style:
+                                TextStyle(fontSize: 17, color: Colors.white)),
+                        style: ButtonStyle(
+                            padding: MaterialStateProperty.all<EdgeInsets>(
+                                EdgeInsets.all(15)),
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                Colors.amber[900]),
+                            foregroundColor:
+                                MaterialStateProperty.all<Color>(Colors.red),
+                            shape: MaterialStateProperty.all<
+                                    RoundedRectangleBorder>(
                                 RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18.0),
-                                    side: BorderSide(color: Colors.red)))),
-                    onPressed: () => null),
+                                    borderRadius:
+                                        BorderRadius.circular(15.0)))),
+                        onPressed: () async => {
+                              if (commentController.text.trim().length != 0)
+                                {
+                                  setState(() {
+                                    isSending = true;
+                                  }),
+                                  await sendEmail(
+                                      context,
+                                      _scaffoldKey,
+                                      firstNameController.text +
+                                          " " +
+                                          lastNameController.text,
+                                      emailController.text,
+                                      commentController.text)
+                                }
+                              else
+                                snackbar(
+                                    context,
+                                    "Please type the comment first.",
+                                    _scaffoldKey)
+                            }),
               )
             ],
           )),
     );
   }
+
+  Future<dynamic> sendEmail(
+      BuildContext context,
+      GlobalKey<ScaffoldState> _scaffoldKey,
+      String name,
+      String email,
+      String comment) async {
+    Map<String, String> requestHeaders = <String, String>{
+      'Content-type': 'application/json',
+      'Accept': 'application/json',
+      "x-rapidapi-host": "email-sender1.p.rapidapi.com",
+      "x-rapidapi-key": "b67ed144bemsh5d3dfeae0d7c5d5p10faddjsne34b1f4b5e0f",
+    };
+
+    var content =
+        '''<div style="width:85%; float:left; padding:15px 5px; border:1px solid gray; border-radius:5px; text-align:center; margin:10px 7.5%;"><img style="width:80px;" src="https://gridsquare-bucket.s3.us-east-2.amazonaws.com/model_1625664396500.png" + '" />
+         <h2>Questions/Requests</h2>
+         <h3 style="text-align:left">Name : ''' +
+            name +
+            '''</h4>
+         <h3 style="text-align:left">Email : ''' +
+            email +
+            '''</h3>
+         <pre style="text-align:center">''' +
+            comment +
+            '''</pre>
+         <div style="float:left; width:100%;">
+         </div></div>''';
+
+    Map<String, String> requestParams = <String, String>{
+      "txt_msg": '',
+      "to": "deliahamlet@gmail.com",
+      "from": "SN-Watch noreply",
+      "subject": "Summit Neighborhood Watch",
+      "html_msg": content
+    };
+
+    final uri = Uri.https('email-sender1.p.rapidapi.com', '/', requestParams);
+    try {
+      http.Response response = await http.post(
+        uri,
+        headers: requestHeaders,
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          isSending = false;
+        });
+        snackbar(context, "Successfully sent.", _scaffoldKey);
+      } else {
+        setState(() {
+          isSending = false;
+        });
+        snackbar(context, "Error occured.", _scaffoldKey);
+      }
+    } catch (error) {
+      setState(() {
+        isSending = false;
+      });
+      snackbar(context, "Error occured.", _scaffoldKey);
+    }
+  }
+}
+
+snackbar(
+    BuildContext context, String text, GlobalKey<ScaffoldState> _scaffoldKey) {
+  final snackBar = SnackBar(
+    backgroundColor: Colors.blueGrey,
+    shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(10))),
+    content: Text(
+      '$text ',
+      style: TextStyle(fontSize: 18),
+    ),
+    duration: Duration(seconds: 3),
+  );
+  ScaffoldMessenger.of(context).removeCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }

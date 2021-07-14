@@ -131,7 +131,7 @@ class _LinksPageState extends State<LinksPage> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        backgroundColor: Colors.blue[500],
+        backgroundColor: Colors.blue[900],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: new Center(

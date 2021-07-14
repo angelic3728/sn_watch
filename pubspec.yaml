@@ -1,5 +1,5 @@
 name: sn_watch
-description: A new Flutter project.
+description: Summit Neighborhood Watch app for sweethearts.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.
@@ -38,6 +38,14 @@ dependencies:
   flutter_launcher_icons: ^0.8.0
   badges: ^1.2.0
   rxdart: ^0.25.0
+  http: ^0.12.2
+  # google_sign_in: ^4.5.9
+  # shared_preferences: ^2.0.6
+  # firebase_core: ^0.7.0
+  # cloud_firestore: ^0.16.0+1
+  # animated_splash_screen: ^1.1.0
+  # firebase_auth: ^0.20.1
+  # cupertino_icons: ^1.0.3
 
 dev_dependencies:
   flutter_test:
@@ -92,6 +100,6 @@ flutter:
   #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
-  #
+  #  
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

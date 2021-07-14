@@ -202,4 +202,63 @@ class DatabaseMethods {
               })
             });
   }
+
+  // get user groups
+  getUserGroups(String myUID) async {
+    print(myUID);
+    return FirebaseFirestore.instance
+        .collection("users")
+        .doc(myUID)
+        .snapshots();
+  }
+
+  // create group
+  Future createGroup(String uid, String userName, String groupName) async {
+    DocumentReference groupDocRef =
+        await FirebaseFirestore.instance.collection("groups").add({
+      'groupName': groupName,
+      'groupIcon': '',
+      'admin': userName,
+      'members': [],
+      //'messages': ,
+      'groupId': '',
+      'recentMessage': '',
+      'recentMessageSender': ''
+    });
+
+    await groupDocRef.update({
+      'members': FieldValue.arrayUnion([uid + '_' + userName]),
+      'groupId': groupDocRef.id
+    });
+
+    DocumentReference userDocRef =
+        FirebaseFirestore.instance.collection("users").doc(uid);
+    return await userDocRef.update({
+      'groups': FieldValue.arrayUnion([groupDocRef.id + '_' + groupName])
+    });
+  }
+
+  // send message
+  sendGMessage(String groupId, chatMessageData) {
+    FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .add(chatMessageData);
+    FirebaseFirestore.instance.collection('groups').doc(groupId).update({
+      'recentMessage': chatMessageData['message'],
+      'recentMessageSender': chatMessageData['sender'],
+      'recentMessageTime': chatMessageData['time'].toString(),
+    });
+  }
+
+  // get chats of a particular group
+  getGChats(String groupId) async {
+    return FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('messages')
+        .orderBy('time')
+        .snapshots();
+  }
 }

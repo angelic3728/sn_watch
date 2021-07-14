@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sn_watch/helper/helperfunctions.dart';
 import 'package:sn_watch/pages/chatrooms.dart';
 import 'package:sn_watch/pages/links.dart';
 import 'package:sn_watch/pages/login.dart';
@@ -13,8 +14,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:badges/badges.dart';
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
   // how it looks.
@@ -23,8 +22,6 @@ class MyHomePage extends StatefulWidget {
   // case the title) provided by the parent (in this case the App widget) and
   // used by the build method of the State. Fields in a Widget subclass are
   // always marked "final".
-
-  final String title;
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
@@ -82,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             new Image.asset(
               imgUrl,
-              width: MediaQuery.of(context).size.width * 0.25,
+              width: MediaQuery.of(context).size.width * 0.22,
             ),
             Container(
               margin: const EdgeInsets.only(top: 8),
@@ -149,7 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     Color color = Colors.blue[500];
     Widget buttonSection1 = Container(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.1),
+      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.08),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -178,7 +175,7 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildButtonColumn(context, color, "assets/images/w_icon.png",
-              'Questions/Request', 4),
+              'Question/Request', 4),
           _buildButtonColumn(context, color, "assets/images/police_icon.png",
               'Police Blotter', 5),
         ],
@@ -267,11 +264,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        backgroundColor: Colors.blue[500],
+        backgroundColor: Colors.blue[900],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: new Center(
-            child: new Text(widget.title, style: TextStyle(fontSize: 20))),
+            child: new Text("Summit Neighborhood Watch")),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -300,14 +297,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   Container(
                     padding: EdgeInsets.only(bottom: 10),
                     child: Text(
-                      (_displayName != '') ? _displayName : "",
+                      _displayName ?? "",
                       style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
                   ),
                   Container(
                     padding: EdgeInsets.only(bottom: 10),
                     child: Text(
-                      (_email != '') ? _email : "",
+                      _email ?? "",
                       style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
                   ),
@@ -336,6 +333,10 @@ class _MyHomePageState extends State<MyHomePage> {
     await FirebaseAuth.instance.signOut();
     final GoogleSignIn googleSignIn = new GoogleSignIn();
     await googleSignIn.signOut();
+    HelperFunctions.saveUserLoggedInSharedPreference(false);
+    HelperFunctions.saveUIDSharedPreference("");
+    HelperFunctions.saveUserNameSharedPreference("");
+    HelperFunctions.saveUserEmailSharedPreference("");
     snackbar(
         context, 'Logged out Successfully...', _scaffoldKey, Colors.black87);
     Navigator.push(

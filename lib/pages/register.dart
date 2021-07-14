@@ -28,17 +28,18 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final mq = MediaQuery.of(context).size;
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body: Center(
           child: Container(
               padding:
-                  EdgeInsets.only(left: mq.width * 0.1, right: mq.width * 0.1),
+                  EdgeInsets.only(left: mq.width * 0.1, right: mq.width * 0.1, bottom: MediaQuery.of(context).viewInsets.bottom),
               alignment: Alignment.center,
               child: ListView(
                 children: [
                   Container(
                     alignment: Alignment.center,
-                    height: mq.height * 0.85,
+                    height: (mq.height - 50 - MediaQuery.of(context).padding.top),
                     child: ListView(
                       children: [
                         Container(
@@ -224,14 +225,14 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   Container(
-                    height: mq.height * 0.15,
-                    alignment: Alignment.centerRight,
+                    height: 50,
+                    alignment: Alignment.center,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text("I already have an account.",
                             style:
-                                TextStyle(color: Colors.black, fontSize: 16)),
+                                TextStyle(color: Colors.black, fontSize: 17)),
                         TextButton(
                             onPressed: () async {
                               Navigator.push(
@@ -306,24 +307,24 @@ class _RegisterPageState extends State<RegisterPage> {
 
             String emailKeyword = email.split("@")[0].toLowerCase();
 
-            for (int i=0; i<firstName.length; i++) {
-              searchKeywords.add(firstName.substring(0, i+1));
+            for (int i = 0; i < firstName.length; i++) {
+              searchKeywords.add(firstName.substring(0, i + 1));
             }
 
-            for (int j=0; j<lastName.length; j++) {
-              searchKeywords.add(lastName.substring(0, j+1));
+            for (int j = 0; j < lastName.length; j++) {
+              searchKeywords.add(lastName.substring(0, j + 1));
             }
 
-            for (int k=0; k<emailKeyword.length; k++) {
-              searchKeywords.add(emailKeyword.substring(0, k+1));
+            for (int k = 0; k < emailKeyword.length; k++) {
+              searchKeywords.add(emailKeyword.substring(0, k + 1));
             }
 
             Map<String, dynamic> userDataMap = {
               "userName": displayName,
               "userEmail": email.toLowerCase(),
               "authors": [user.uid],
-              "uid":user.uid,
-              "searchKeywords":searchKeywords
+              "uid": user.uid,
+              "searchKeywords": searchKeywords
             };
 
             databaseMethods.addUserInfo(user.uid, userDataMap);

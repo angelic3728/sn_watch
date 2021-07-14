@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:sn_watch/pages/home.dart';
 import 'package:sn_watch/pages/login.dart';
+import 'helper/helperfunctions.dart';
 
 void main() {
   // Initialize Firebase
@@ -11,7 +13,31 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isLoggedIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLoggedInStatus();
+  }
+
+  _getUserLoggedInStatus() async {
+    await HelperFunctions.getUserLoggedInSharedPreference().then((value) {
+      print(value.toString());
+      if (value != null) {
+        setState(() {
+          _isLoggedIn = value;
+        });
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,7 +45,7 @@ class MyApp extends StatelessWidget {
         home: AnimatedSplashScreen(
             duration: 3000,
             splash: new Image.asset("assets/images/logo.png"),
-            nextScreen: LoginPage(),
+            nextScreen: _isLoggedIn ? MyHomePage() : LoginPage(),
             splashTransition: SplashTransition.fadeTransition,
             pageTransitionType: PageTransitionType.scale,
             backgroundColor: Colors.white));
