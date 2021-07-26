@@ -39,6 +39,7 @@ dependencies:
   badges: ^1.2.0
   rxdart: ^0.25.0
   http: ^0.12.2
+  multiple_stream_builder: ^1.1.1
   # google_sign_in: ^4.5.9
   # shared_preferences: ^2.0.6
   # firebase_core: ^0.7.0

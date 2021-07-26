@@ -324,6 +324,7 @@ class _RegisterPageState extends State<RegisterPage> {
               "userEmail": email.toLowerCase(),
               "authors": [user.uid],
               "uid": user.uid,
+              "groups":[],
               "searchKeywords": searchKeywords
             };
 

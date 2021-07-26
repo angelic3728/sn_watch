@@ -9,7 +9,7 @@ class ChatRoomsTile extends StatelessWidget {
   final Function getRequests;
 
   ChatRoomsTile(
-      {this.userName,
+      {@required this.userName,
       @required this.chatRoomId,
       this.unreadMsgs,
       this.getRequests});
@@ -21,7 +21,8 @@ class ChatRoomsTile extends StatelessWidget {
         Navigator.of(context)
             .push(
               new MaterialPageRoute(
-                  builder: (_) => new Chat(chatRoomId: chatRoomId)),
+                  builder: (_) =>
+                      new Chat(chatRoomId: chatRoomId, userName: userName)),
             )
             .then((val) => val ? getRequests() : null);
       },
@@ -47,7 +48,7 @@ class ChatRoomsTile extends StatelessWidget {
               width: 40,
               padding: EdgeInsets.only(top: 10),
               decoration: BoxDecoration(
-                  color: CustomTheme.colorAccent,
+                  color: CustomTheme.colorAccent1,
                   borderRadius: BorderRadius.circular(4)),
               child: Text(userName.substring(0, 1).toUpperCase(),
                   textAlign: TextAlign.center,
@@ -67,8 +68,9 @@ class ChatRoomsTile extends StatelessWidget {
                     fontSize: 16,
                     fontFamily: 'OverpassRegular',
                     fontWeight: FontWeight.w300)),
-            (unreadMsgs != 0)
-                ? Expanded(
+            (unreadMsgs == 0 || unreadMsgs == null)
+                ? Container()
+                : Expanded(
                     child: Container(
                         alignment: Alignment.centerRight,
                         child: Container(
@@ -85,7 +87,6 @@ class ChatRoomsTile extends StatelessWidget {
                                 fontWeight: FontWeight.bold),
                           ),
                         )))
-                : Container()
           ],
         ),
       ),

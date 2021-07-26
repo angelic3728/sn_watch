@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:multiple_stream_builder/multiple_stream_builder.dart';
+import 'package:sn_watch/helper/constants.dart';
 import 'package:sn_watch/helper/helperfunctions.dart';
 import 'package:sn_watch/pages/chatrooms.dart';
 import 'package:sn_watch/pages/links.dart';
@@ -27,14 +31,17 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   String _displayName = '';
   String _email = '';
   Stream<QuerySnapshot> unreadMsgs;
+  Stream<List<QuerySnapshot>> unreadGMsgs;
   Map<String, int> unreadMsgsObj = {};
+  Map<String, int> unreadGMsgsObj = {};
 
   Future<Null> getInitials() async {
+    Constants.myUID = await HelperFunctions.getUIDSharedPreference();
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _displayName = prefs.getString("USERNAME");
@@ -44,9 +51,17 @@ class _MyHomePageState extends State<MyHomePage> {
       _email = prefs.getString("USEREMAIL");
     });
 
-    DatabaseMethods().getUnreadMsgs(prefs.getString('UID')).then((data) {
+    DatabaseMethods().getUnreadMsgs(Constants.myUID).then((data) {
       setState(() {
         unreadMsgs = data;
+      });
+    });
+
+    DatabaseMethods()
+        .getUnreadGMsgs(Constants.myUID, _displayName)
+        .then((data) {
+      setState(() {
+        unreadGMsgs = data;
       });
     });
   }
@@ -85,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
               margin: const EdgeInsets.only(top: 8),
               child: Text(label,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w400,
                     color: Colors.black,
                   ),
@@ -139,14 +154,39 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     getInitials();
+    WidgetsBinding.instance.addObserver(this);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      DatabaseMethods().getUnreadMsgs(Constants.myUID).then((data) {
+        setState(() {
+          unreadMsgs = data;
+        });
+      });
+
+      DatabaseMethods()
+          .getUnreadGMsgs(Constants.myUID, _displayName)
+          .then((data) {
+        setState(() {
+          unreadGMsgs = data;
+        });
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     Color color = Colors.blue[500];
     Widget buttonSection1 = Container(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).size.height * 0.08),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -157,7 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     Widget buttonSection2 = Container(
-      padding: EdgeInsets.only(top: 20),
+      padding: EdgeInsets.only(top: 25),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -170,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     Widget buttonSection3 = Container(
-      padding: EdgeInsets.only(top: 20),
+      padding: EdgeInsets.only(top: 25),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -182,16 +222,19 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
 
-    Widget chatWidget() {
-      return StreamBuilder(
-        stream: unreadMsgs,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
+    Widget multiUnreadChats() {
+      return StreamBuilder2<QuerySnapshot, List<QuerySnapshot>>(
+        streams: Tuple2(unreadMsgs, unreadGMsgs),
+        builder: (context, snapshots) {
+          if (snapshots.item1.hasData || snapshots.item2.hasData) {
             int unreadCnt = 0;
-            if (snapshot.data.docs.length != 0) {
-              Iterable<QueryDocumentSnapshot> isUnreadMsgs = snapshot.data.docs
+            int unreadGCnt = 0;
+            if (snapshots.item1.hasData &&
+                snapshots.item1.data.docs.length != 0) {
+              Iterable<QueryDocumentSnapshot> isUnreadMsgs = snapshots
+                  .item1.data.docs
                   .where((doc) => doc.data()['isread'] == false);
-              String key = snapshot.data.docs[0].id;
+              String key = snapshots.item1.data.docs[0].id;
               int value = isUnreadMsgs.length;
               unreadMsgsObj[key] = value;
 
@@ -200,18 +243,35 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             }
 
+            if (snapshots.item2.hasData && snapshots.item2.data.length != 0) {
+              snapshots.item2.data.forEach((gCollection) {
+                Iterable<QueryDocumentSnapshot> isUnreadGMsgs = gCollection.docs
+                    .where((doc) =>
+                        doc.data()['isreads'][Constants.myUID] == false);
+                String key = gCollection.docs[0].id;
+                int value = isUnreadGMsgs.length;
+                unreadGMsgsObj[key] = value;
+              });
+
+              unreadGMsgsObj.forEach((key, value) {
+                unreadGCnt += value;
+              });
+            }
+
             return GestureDetector(
               child: Container(
                   padding: EdgeInsets.only(bottom: 15, right: 20),
                   alignment: Alignment.bottomRight,
-                  child: (unreadCnt == 0)
+                  child: ((unreadCnt + unreadGCnt) == 0)
                       ? Container(
                           alignment: Alignment.center,
-                          width: 80,
-                          height: 30,
+                          width: 90,
+                          height: 35,
                           child: Text('chat',
-                              style:
-                                  TextStyle(fontSize: 18, color: Colors.white)),
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                           decoration: new BoxDecoration(
                               borderRadius: new BorderRadius.circular(5),
                               color: Colors.blue),
@@ -224,17 +284,19 @@ class _MyHomePageState extends State<MyHomePage> {
                               height: 15,
                               alignment: Alignment.center,
                               child: Text(
-                                unreadCnt.toString(),
+                                (unreadCnt + unreadGCnt).toString(),
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 12),
                               )),
                           child: Container(
                             alignment: Alignment.center,
-                            width: 80,
-                            height: 30,
+                            width: 90,
+                            height: 35,
                             child: Text('chat',
                                 style: TextStyle(
-                                    fontSize: 18, color: Colors.white)),
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold)),
                             decoration: new BoxDecoration(
                               borderRadius: new BorderRadius.circular(5),
                               color: Colors.blue,
@@ -253,7 +315,7 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
 
-    Widget chatButton = Expanded(child: chatWidget());
+    Widget chatButton = Container(height: 65, child: multiUnreadChats());
 
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
@@ -267,18 +329,27 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Colors.blue[900],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: new Center(
-            child: new Text("Summit Neighborhood Watch")),
+        title: new Center(child: new Text("Summit Neighborhood Watch")),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
           children: [
-            buttonSection1,
-            buttonSection2,
-            buttonSection3,
-            chatButton
+            Container(
+              height: MediaQuery.of(context).size.height -
+                  121 -
+                  MediaQuery.of(context).padding.top,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  buttonSection1,
+                  buttonSection2,
+                  buttonSection3,
+                ],
+              ),
+            ),
+            chatButton,
           ],
           mainAxisAlignment: MainAxisAlignment.center,
         ),

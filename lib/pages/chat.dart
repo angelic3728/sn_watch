@@ -6,8 +6,9 @@ import 'package:flutter/material.dart';
 
 class Chat extends StatefulWidget {
   final String chatRoomId;
+  final String userName;
 
-  Chat({this.chatRoomId});
+  Chat({this.chatRoomId, this.userName});
 
   @override
   _ChatState createState() => _ChatState();
@@ -19,6 +20,8 @@ class _ChatState extends State<Chat> {
   ScrollController _scrollController = new ScrollController();
 
   Widget chatMessages() {
+    var lastTime = 0;
+    var newDateList = [];
     return StreamBuilder(
       stream: chats,
       builder: (context, snapshot) {
@@ -37,11 +40,33 @@ class _ChatState extends State<Chat> {
               controller: _scrollController,
               itemCount: snapshot.data.docs.length,
               itemBuilder: (context, index) {
+                bool showDate = false;
+                if (index == 0 ||
+                    DateTime.fromMillisecondsSinceEpoch(
+                                snapshot.data.docs[index].data()["time"])
+                            .toString()
+                            .split(" ")[0] !=
+                        DateTime.fromMillisecondsSinceEpoch(lastTime)
+                            .toString()
+                            .split(" ")[0]) {
+                  showDate = true;
+                  if (newDateList.length != snapshot.data.docs.length && newDateList.length == index) {
+                    newDateList.add(true);
+                  }
+                } else {
+                  if (newDateList.length != snapshot.data.docs.length && newDateList.length == index) {
+                    newDateList.add(false);
+                  }
+                }
+                lastTime = snapshot.data.docs[index].data()["time"];
                 return MessageTile(
-                  message: snapshot.data.docs[index].data()["message"],
-                  sendByMe: Constants.myUID ==
-                      snapshot.data.docs[index].data()["sendBy"],
-                );
+                    message: snapshot.data.docs[index].data()["message"],
+                    sendByMe: Constants.myUID ==
+                        snapshot.data.docs[index].data()["sendBy"],
+                    time: snapshot.data.docs[index].data()["time"],
+                    showDate: (newDateList.length == snapshot.data.docs.length)
+                        ? newDateList[index]
+                        : showDate);
               });
         } else {
           return Container();
@@ -82,7 +107,7 @@ class _ChatState extends State<Chat> {
     return Scaffold(
       appBar: AppBar(
         title: new Center(
-            child: new Text("Chat Room", style: TextStyle(fontSize: 20))),
+            child: new Text(widget.userName, style: TextStyle(fontSize: 20))),
         elevation: 0.0,
         centerTitle: false,
         leading: new IconButton(
@@ -152,8 +177,14 @@ class _ChatState extends State<Chat> {
 class MessageTile extends StatelessWidget {
   final String message;
   final bool sendByMe;
+  final int time;
+  final bool showDate;
 
-  MessageTile({@required this.message, @required this.sendByMe});
+  MessageTile(
+      {@required this.message,
+      @required this.sendByMe,
+      @required this.time,
+      @required this.showDate});
 
   @override
   Widget build(BuildContext context) {
@@ -163,33 +194,75 @@ class MessageTile extends StatelessWidget {
             bottom: 8,
             left: sendByMe ? 0 : 24,
             right: sendByMe ? 24 : 0),
-        alignment: sendByMe ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          margin:
-              sendByMe ? EdgeInsets.only(left: 30) : EdgeInsets.only(right: 30),
-          padding: EdgeInsets.only(top: 17, bottom: 17, left: 20, right: 20),
-          decoration: BoxDecoration(
-              borderRadius: sendByMe
-                  ? BorderRadius.only(
-                      topLeft: Radius.circular(23),
-                      topRight: Radius.circular(23),
-                      bottomLeft: Radius.circular(23))
-                  : BorderRadius.only(
-                      topLeft: Radius.circular(23),
-                      topRight: Radius.circular(23),
-                      bottomRight: Radius.circular(23)),
-              gradient: LinearGradient(
-                colors: sendByMe
-                    ? [Colors.blueAccent[400], Colors.blueAccent[700]]
-                    : [Colors.orangeAccent[700], Colors.orange[800]],
-              )),
-          child: Text(message,
-              textAlign: TextAlign.start,
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'OverpassRegular',
-                  fontWeight: FontWeight.w500)),
+        child: Column(
+          children: [
+            showDate
+                ? Container(
+                    margin: sendByMe
+                        ? EdgeInsets.only(left: 24)
+                        : EdgeInsets.only(right: 24),
+                    padding: EdgeInsets.all(5.0),
+                    decoration: new BoxDecoration(
+                        borderRadius: BorderRadius.circular(5.0),
+                        color: Colors.greenAccent[100]),
+                    child: Text(
+                      DateTime.fromMillisecondsSinceEpoch(time)
+                          .toString()
+                          .split(" ")[0],
+                      style: TextStyle(color: Colors.black, fontSize: 18),
+                    ))
+                : Container(),
+            Container(
+              alignment:
+                  sendByMe ? Alignment.centerRight : Alignment.centerLeft,
+              margin: sendByMe
+                  ? EdgeInsets.only(left: 30)
+                  : EdgeInsets.only(right: 30),
+              padding: sendByMe
+                  ? EdgeInsets.only(bottom: 5, right: 10)
+                  : EdgeInsets.only(bottom: 5, left: 10),
+              child: Text(getSentTime(time)),
+            ),
+            Container(
+                alignment:
+                    sendByMe ? Alignment.centerRight : Alignment.centerLeft,
+                margin: sendByMe
+                    ? EdgeInsets.only(left: 30)
+                    : EdgeInsets.only(right: 30),
+                child: Container(
+                  padding:
+                      EdgeInsets.only(top: 17, bottom: 17, left: 20, right: 20),
+                  decoration: BoxDecoration(
+                      borderRadius: sendByMe
+                          ? BorderRadius.only(
+                              topLeft: Radius.circular(23),
+                              topRight: Radius.circular(23),
+                              bottomLeft: Radius.circular(23))
+                          : BorderRadius.only(
+                              topLeft: Radius.circular(23),
+                              topRight: Radius.circular(23),
+                              bottomRight: Radius.circular(23)),
+                      gradient: LinearGradient(
+                        colors: sendByMe
+                            ? [Colors.blueAccent[400], Colors.blueAccent[700]]
+                            : [Colors.orangeAccent[700], Colors.orange[800]],
+                      )),
+                  child: Text(message,
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontFamily: 'OverpassRegular',
+                          fontWeight: FontWeight.w500)),
+                ))
+          ],
         ));
+  }
+
+  getSentTime(int time) {
+    var dateTime = DateTime.fromMillisecondsSinceEpoch(time).toString();
+    var sTime = dateTime.split(" ")[1];
+    var result = sTime.substring(0, 5);
+    return result;
   }
 }

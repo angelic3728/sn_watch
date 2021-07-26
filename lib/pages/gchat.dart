@@ -4,51 +4,83 @@ import 'package:sn_watch/services/database.dart';
 import 'package:sn_watch/widget/message_tile.dart';
 
 class GChatPage extends StatefulWidget {
-
   final String groupId;
   final String userName;
+  final String userId;
   final String groupName;
 
-  GChatPage({
-    this.groupId,
-    this.userName,
-    this.groupName
-  });
+  GChatPage({this.groupId, this.userName, this.userId, this.groupName});
 
   @override
   _GChatPageState createState() => _GChatPageState();
 }
 
 class _GChatPageState extends State<GChatPage> {
-  
   Stream<QuerySnapshot> _chats;
   TextEditingController messageEditingController = new TextEditingController();
 
-  Widget _chatMessages(){
+  @override
+  void initState() {
+    super.initState();
+    DatabaseMethods().getGChats(widget.groupId).then((val) {
+      setState(() {
+        _chats = val;
+      });
+    });
+  }
+
+  Widget _chatMessages() {
+    var lastTime = 0;
+    var newDateList = [];
     return StreamBuilder(
       stream: _chats,
-      builder: (context, snapshot){
-        return snapshot.hasData ?  ListView.builder(
-          itemCount: snapshot.data.documents.length,
-          itemBuilder: (context, index){
-            return MessageTile(
-              message: snapshot.data.documents[index].data["message"],
-              sender: snapshot.data.documents[index].data["sender"],
-              sentByMe: widget.userName == snapshot.data.documents[index].data["sender"],
-            );
-          }
-        )
-        :
-        Container();
+      builder: (context, snapshot) {
+        return snapshot.hasData
+            ? ListView.builder(
+                itemCount: snapshot.data.docs.length,
+                itemBuilder: (context, index) {
+                  bool showDate = false;
+                  if (index == 0 ||
+                      DateTime.fromMillisecondsSinceEpoch(
+                                  snapshot.data.docs[index].data()["time"])
+                              .toString()
+                              .split(" ")[0] !=
+                          DateTime.fromMillisecondsSinceEpoch(lastTime)
+                              .toString()
+                              .split(" ")[0]) {
+                    showDate = true;
+                    if (newDateList.length != snapshot.data.docs.length && newDateList.length == index) {
+                      newDateList.add(true);
+                    }
+                  } else {
+                    if (newDateList.length != snapshot.data.docs.length && newDateList.length == index) {
+                      newDateList.add(false);
+                    }
+                  }
+                  lastTime = snapshot.data.docs[index].data()["time"];
+                  return MessageTile(
+                      message: snapshot.data.docs[index].data()["message"],
+                      sender: snapshot.data.docs[index].data()["sender"],
+                      sentByMe: widget.userId ==
+                          snapshot.data.docs[index].data()["senderId"],
+                      time: snapshot.data.docs[index].data()["time"],
+                      showDate:
+                          (newDateList.length == snapshot.data.docs.length)
+                              ? newDateList[index]
+                              : showDate);
+                })
+            : Container();
       },
     );
   }
 
   _sendMessage() {
     if (messageEditingController.text.isNotEmpty) {
+      // print("uid 3 = " + widget.userId);
       Map<String, dynamic> chatMessageMap = {
         "message": messageEditingController.text,
         "sender": widget.userName,
+        "senderId": widget.userId,
         'time': DateTime.now().millisecondsSinceEpoch,
       };
 
@@ -60,18 +92,6 @@ class _GChatPageState extends State<GChatPage> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    DatabaseMethods().getGChats(widget.groupId).then((val) {
-      // print(val);
-      setState(() {
-        _chats = val;
-      });
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -96,22 +116,17 @@ class _GChatPageState extends State<GChatPage> {
                     Expanded(
                       child: TextField(
                         controller: messageEditingController,
-                        style: TextStyle(
-                          color: Colors.white
-                        ),
+                        style: TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: "Send a message ...",
-                          hintStyle: TextStyle(
-                            color: Colors.white38,
-                            fontSize: 16,
-                          ),
-                          border: InputBorder.none
-                        ),
+                            hintText: "Send a message ...",
+                            hintStyle: TextStyle(
+                              color: Colors.white38,
+                              fontSize: 16,
+                            ),
+                            border: InputBorder.none),
                       ),
                     ),
-
                     SizedBox(width: 12.0),
-
                     GestureDetector(
                       onTap: () {
                         _sendMessage();
@@ -120,10 +135,10 @@ class _GChatPageState extends State<GChatPage> {
                         height: 50.0,
                         width: 50.0,
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent,
-                          borderRadius: BorderRadius.circular(50)
-                        ),
-                        child: Center(child: Icon(Icons.send, color: Colors.white)),
+                            color: Colors.blueAccent,
+                            borderRadius: BorderRadius.circular(50)),
+                        child: Center(
+                            child: Icon(Icons.send, color: Colors.white)),
                       ),
                     )
                   ],

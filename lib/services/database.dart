@@ -3,12 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sn_watch/helper/helperfunctions.dart';
 
 class DatabaseMethods {
+// Collection reference
+  final CollectionReference userCollection =
+      FirebaseFirestore.instance.collection('users');
+  final CollectionReference chatRoomCollection =
+      FirebaseFirestore.instance.collection('chatRoom');
+  final CollectionReference groupCollection =
+      FirebaseFirestore.instance.collection("groups");
+
   Future<void> addUserInfo(uid, userData) async {
-    FirebaseFirestore.instance
-        .collection("users")
-        .doc(uid)
-        .set(userData)
-        .catchError((e) {
+    userCollection.doc(uid).set(userData).catchError((e) {
       print(e.toString());
     });
   }
@@ -16,8 +20,7 @@ class DatabaseMethods {
   checkGoogleUser(email) async {
     bool isEmpty = true;
     try {
-      await FirebaseFirestore.instance
-          .collection("users")
+      await userCollection
           .where('userEmail', isEqualTo: email)
           .get()
           .then((data) => {
@@ -41,8 +44,7 @@ class DatabaseMethods {
   isTriedUser(email, uid) async {
     bool isEmpty = true;
     try {
-      FirebaseFirestore.instance
-          .collection("users")
+      userCollection
           .where('userEmail', isEqualTo: email)
           .where('authors', arrayContains: uid)
           .get()
@@ -54,34 +56,25 @@ class DatabaseMethods {
   }
 
   addGoogleUser(email, uid) async {
-    FirebaseFirestore.instance
-        .collection("users")
-        .where("userEmail", isEqualTo: email)
-        .get()
-        .then((data) => {
-              data.docs.forEach((doc) async {
-                var authors = doc.data()["authors"];
-                if (authors.length == 1) {
-                  authors.add(uid);
-                  doc.reference.update({"authors": authors});
-                }
-              })
-            });
+    userCollection.where("userEmail", isEqualTo: email).get().then((data) => {
+          data.docs.forEach((doc) async {
+            var authors = doc.data()["authors"];
+            if (authors.length == 1) {
+              authors.add(uid);
+              doc.reference.update({"authors": authors});
+            }
+          })
+        });
   }
 
   getUserInfo(String uid) {
-    return FirebaseFirestore.instance
-        .collection("users")
-        .doc(uid)
-        .get()
-        .catchError((e) {
+    return userCollection.doc(uid).get().catchError((e) {
       print(e.toString());
     });
   }
 
   searchByKeyword(String searchField, String email) async {
-    return FirebaseFirestore.instance
-        .collection("users")
+    return userCollection
         .where('searchKeywords', arrayContains: searchField)
         .get()
         .catchError((e) {
@@ -90,18 +83,13 @@ class DatabaseMethods {
   }
 
   addChatRoom(chatRoom, chatRoomId) {
-    FirebaseFirestore.instance
-        .collection("chatRoom")
-        .doc(chatRoomId)
-        .set(chatRoom)
-        .catchError((e) {
+    chatRoomCollection.doc(chatRoomId).set(chatRoom).catchError((e) {
       print(e.toString());
     });
   }
 
   getChats(String chatRoomId) async {
-    return FirebaseFirestore.instance
-        .collection("chatRoom")
+    return chatRoomCollection
         .doc(chatRoomId)
         .collection("chats")
         .orderBy('time')
@@ -109,8 +97,7 @@ class DatabaseMethods {
   }
 
   addMessage(String chatRoomId, chatMessageData) {
-    FirebaseFirestore.instance
-        .collection("chatRoom")
+    chatRoomCollection
         .doc(chatRoomId)
         .collection("chats")
         .add(chatMessageData)
@@ -120,8 +107,7 @@ class DatabaseMethods {
   }
 
   getUserChats(String itIsMyUID) async {
-    return FirebaseFirestore.instance
-        .collection("chatRoom")
+    return chatRoomCollection
         .where('uids', arrayContains: itIsMyUID)
         .snapshots();
   }
@@ -129,14 +115,12 @@ class DatabaseMethods {
   getUnreadMsgs(String myUID) async {
     List<Stream<QuerySnapshot>> allSnapshots = [];
     try {
-      await FirebaseFirestore.instance
-          .collection("chatRoom")
+      await chatRoomCollection
           .where('uids', arrayContains: myUID)
           .get()
           .then((data) => {
                 data.docs.forEach((doc) {
-                  Stream<QuerySnapshot> snapshot = FirebaseFirestore.instance
-                      .collection("chatRoom")
+                  Stream<QuerySnapshot> snapshot = chatRoomCollection
                       .doc(doc.id)
                       .collection('chats')
                       .where('sendBy', isNotEqualTo: myUID)
@@ -151,19 +135,41 @@ class DatabaseMethods {
     }
   }
 
+  getUnreadGMsgs(String myUID, String userName) async {
+    String memberStr = myUID + "_" + userName;
+    List<Stream<QuerySnapshot>> allSnapshots = [];
+    try {
+      await groupCollection
+          .where('members', arrayContains: memberStr)
+          .get()
+          .then((data) => {
+                data.docs.forEach((doc) async {
+                  Stream<QuerySnapshot> snapshot = groupCollection
+                      .doc(doc.id)
+                      .collection('messages')
+                      .where('senderId', isNotEqualTo: myUID)
+                      .snapshots();
+                  allSnapshots.add(snapshot);
+                })
+              });
+      return Rx.zipList(allSnapshots);
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
   getUnreadChats(String myUID) async {
     Map<String, int> allSnapshots = {};
     try {
-      await FirebaseFirestore.instance
-          .collection("chatRoom")
+      await chatRoomCollection
           .where('uids', arrayContains: myUID)
           .get()
           .then((data) => {
                 data.docs.forEach((doc) {
                   String key;
                   int value;
-                  FirebaseFirestore.instance
-                      .collection("chatRoom")
+                  chatRoomCollection
                       .doc(doc.id)
                       .collection('chats')
                       .where('sendBy', isNotEqualTo: myUID)
@@ -185,16 +191,14 @@ class DatabaseMethods {
   }
 
   checkMessages(String roomID, String myUID) {
-    FirebaseFirestore.instance
-        .collection("chatRoom")
+    chatRoomCollection
         .doc(roomID)
         .collection('chats')
         .where('isread', isEqualTo: false)
         .get()
         .then((data) => {
               data.docs.forEach((doc) async {
-                FirebaseFirestore.instance
-                    .collection("chatRoom")
+                chatRoomCollection
                     .doc(roomID)
                     .collection('chats')
                     .doc(doc.id)
@@ -205,21 +209,33 @@ class DatabaseMethods {
 
   // get user groups
   getUserGroups(String myUID) async {
-    print(myUID);
-    return FirebaseFirestore.instance
-        .collection("users")
-        .doc(myUID)
-        .snapshots();
+    return userCollection.doc(myUID).snapshots();
   }
 
   // create group
   Future createGroup(String uid, String userName, String groupName) async {
-    DocumentReference groupDocRef =
-        await FirebaseFirestore.instance.collection("groups").add({
+    var searchKeywords = [];
+
+    var firstName = userName.split(" ")[0];
+    var lastName = userName.split(" ")[1];
+
+    for (int i = 0; i < userName.split(" ")[0].length; i++) {
+      searchKeywords.add(firstName.substring(0, i + 1));
+    }
+
+    for (int j = 0; j < lastName.length; j++) {
+      searchKeywords.add(lastName.substring(0, j + 1));
+    }
+
+    for (int k = 0; k < groupName.length; k++) {
+      searchKeywords.add(groupName.substring(0, k + 1));
+    }
+    DocumentReference groupDocRef = await groupCollection.add({
       'groupName': groupName,
       'groupIcon': '',
       'admin': userName,
       'members': [],
+      'searchKeywords': searchKeywords,
       //'messages': ,
       'groupId': '',
       'recentMessage': '',
@@ -231,21 +247,34 @@ class DatabaseMethods {
       'groupId': groupDocRef.id
     });
 
-    DocumentReference userDocRef =
-        FirebaseFirestore.instance.collection("users").doc(uid);
+    DocumentReference userDocRef = userCollection.doc(uid);
     return await userDocRef.update({
       'groups': FieldValue.arrayUnion([groupDocRef.id + '_' + groupName])
     });
   }
 
   // send message
-  sendGMessage(String groupId, chatMessageData) {
-    FirebaseFirestore.instance
-        .collection('groups')
-        .doc(groupId)
-        .collection('messages')
-        .add(chatMessageData);
-    FirebaseFirestore.instance.collection('groups').doc(groupId).update({
+  sendGMessage(String groupId, chatMessageData) async {
+    DocumentReference groupDocRef = groupCollection.doc(groupId);
+    DocumentSnapshot groupDocSnapshot = await groupDocRef.get();
+
+    List<dynamic> members = await groupDocSnapshot.data()['members'];
+
+    Map<String, bool> isreads = {};
+
+    members.forEach((element) {
+      String memberId = element.toString().split("_")[0];
+      if (memberId == chatMessageData["senderId"])
+        isreads[memberId] = true;
+      else
+        isreads[memberId] = false;
+    });
+
+    Map<String, dynamic> gchatMessage = chatMessageData;
+    gchatMessage["isreads"] = isreads;
+
+    groupCollection.doc(groupId).collection('messages').add(chatMessageData);
+    groupCollection.doc(groupId).update({
       'recentMessage': chatMessageData['message'],
       'recentMessageSender': chatMessageData['sender'],
       'recentMessageTime': chatMessageData['time'].toString(),
@@ -254,11 +283,63 @@ class DatabaseMethods {
 
   // get chats of a particular group
   getGChats(String groupId) async {
-    return FirebaseFirestore.instance
-        .collection('groups')
+    return groupCollection
         .doc(groupId)
         .collection('messages')
         .orderBy('time')
         .snapshots();
+  }
+
+  searchByGName(String keyword) async {
+    return groupCollection
+        .where('searchKeywords', arrayContains: keyword)
+        .get();
+  }
+
+  Future<bool> isUserJoined(
+      String uid, String groupId, String groupName, String userName) async {
+    DocumentReference userDocRef = userCollection.doc(uid);
+    DocumentSnapshot userDocSnapshot = await userDocRef.get();
+
+    List<dynamic> groups = await userDocSnapshot.data()['groups'];
+
+    if (groups.contains(groupId + '_' + groupName)) {
+      //print('he');
+      return true;
+    } else {
+      //print('ne');
+      return false;
+    }
+  }
+
+  // toggling the user group join
+  Future togglingGroupJoin(
+      String uid, String groupId, String groupName, String userName) async {
+    DocumentReference userDocRef = userCollection.doc(uid);
+    DocumentSnapshot userDocSnapshot = await userDocRef.get();
+
+    DocumentReference groupDocRef = groupCollection.doc(groupId);
+
+    List<dynamic> groups = await userDocSnapshot.data()['groups'];
+
+    if (groups.contains(groupId + '_' + groupName)) {
+      //print('hey');
+      await userDocRef.update({
+        'groups': FieldValue.arrayRemove([groupId + '_' + groupName])
+      });
+
+      await groupDocRef.update({
+        'members': FieldValue.arrayRemove([uid + '_' + userName])
+      });
+    } else {
+      //print('nay');
+      await userDocRef.update({
+        'groups': FieldValue.arrayUnion([groupId + '_' + groupName])
+      });
+
+      await groupDocRef.update({
+        'members': FieldValue.arrayUnion([uid + '_' + userName])
+      });
+    }
   }
 }
