@@ -168,7 +168,7 @@ class _SearchState extends State<Search> {
     getSharedPrefs();
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue[900],
+        backgroundColor: Colors.blueAccent[200],
         title: new Center(
             child: new Text("User Search", style: TextStyle(fontSize: 20))),
         elevation: 0.0,

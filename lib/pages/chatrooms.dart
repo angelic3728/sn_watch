@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sn_watch/helper/constants.dart';
 import 'package:sn_watch/helper/helperfunctions.dart';
 import 'package:sn_watch/services/database.dart';
@@ -7,6 +9,7 @@ import 'package:sn_watch/widget/chatroom_tile.dart';
 import 'package:sn_watch/widget/group_tile.dart';
 
 import 'gsearch.dart';
+import 'home.dart';
 
 class ChatRoom extends StatefulWidget {
   @override
@@ -16,6 +19,7 @@ class ChatRoom extends StatefulWidget {
 class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   Stream chatRooms;
   Map<String, int> unreadMsgsObj = {};
+  Map<String, int> unreadGMsgsObj = {};
   TabController _tabController;
   int _currentIndex = 0;
   Stream _groups;
@@ -27,7 +31,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   void initState() {
     _tabController = TabController(vsync: this, length: 2);
     _tabController.addListener(_handleTabSelection);
-    getUserInfogetChats();
+    getChatRooms();
     _getJoinedGroups();
     super.initState();
   }
@@ -39,14 +43,32 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   }
 
   _getRequests() async {
-    getUserInfogetChats();
+    getChatRooms();
   }
 
-  getUserInfogetChats() async {
+  _getGRequests() async {
+    _getJoinedGroups();
+  }
+
+  // chatrooms info
+  getChatRooms() async {
     unreadMsgsObj = await DatabaseMethods().getUnreadChats(Constants.myUID);
     await DatabaseMethods().getUserChats(Constants.myUID).then((snapshots) {
       setState(() {
         chatRooms = snapshots;
+      });
+    });
+  }
+
+  // groups info
+  _getJoinedGroups() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String userName = prefs.getString("USERNAME");
+    unreadGMsgsObj =
+        await DatabaseMethods().getUnreadGChats(Constants.myUID, userName);
+    await DatabaseMethods().getUserGroups(Constants.myUID).then((snapshots) {
+      setState(() {
+        _groups = snapshots;
       });
     });
   }
@@ -61,7 +83,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.blue[900],
+          backgroundColor: Colors.blueAccent[200],
           title: new Center(child: new Text("Chat List")),
           bottom: new PreferredSize(
               preferredSize:
@@ -106,7 +128,8 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
           leading: new IconButton(
               icon: new Icon(Icons.arrow_back),
               onPressed: () {
-                Navigator.pop(context, true);
+                Navigator.push(context,
+                    CupertinoPageRoute(builder: (context) => MyHomePage()));
               }),
         ),
         body: Center(
@@ -121,6 +144,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                       bottom: 10,
                       right: 0,
                       child: FloatingActionButton(
+                        heroTag: "searchBtn",
                         backgroundColor: Colors.blueAccent[700],
                         child: Icon(
                           Icons.search,
@@ -149,6 +173,7 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                         Align(
                           alignment: Alignment.bottomLeft,
                           child: FloatingActionButton(
+                            heroTag: 'createGroupBtn',
                             child: Icon(Icons.add_circle, color: Colors.white),
                             backgroundColor: Colors.greenAccent[700],
                             onPressed: () {
@@ -159,11 +184,14 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                         Align(
                           alignment: Alignment.bottomRight,
                           child: FloatingActionButton(
+                            heroTag: 'gSearchBtn',
                             child: Icon(Icons.search, color: Colors.white),
                             backgroundColor: Colors.greenAccent[700],
                             onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => GSearchPage()));
+                              Navigator.of(context)
+                                  .push(MaterialPageRoute(
+                                      builder: (_) => new GSearchPage()))
+                                  .then((val) => val ? _getGRequests() : null);
                             },
                           ),
                         ),
@@ -239,8 +267,11 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
                         userId: snapshot.data["uid"],
                         groupId:
                             _destructureId(snapshot.data['groups'][reqIndex]),
-                        groupName: _destructureName(
-                            snapshot.data['groups'][reqIndex]));
+                        groupName:
+                            _destructureName(snapshot.data['groups'][reqIndex]),
+                        unreadGMsgs: unreadGMsgsObj[
+                            _destructureId(snapshot.data['groups'][reqIndex])],
+                        getGRequests: _getGRequests);
                   });
             } else {
               return noGroupWidget();
@@ -253,15 +284,6 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
         }
       },
     );
-  }
-
-  // functions
-  _getJoinedGroups() async {
-    await DatabaseMethods().getUserGroups(Constants.myUID).then((snapshots) {
-      setState(() {
-        _groups = snapshots;
-      });
-    });
   }
 
   String _destructureId(String res) {
@@ -327,12 +349,10 @@ class _ChatRoomState extends State<ChatRoom> with TickerProviderStateMixin {
 snackbar(
     BuildContext context, String text, GlobalKey<ScaffoldState> _scaffoldKey) {
   final snackBar = SnackBar(
-    backgroundColor: Colors.lightBlueAccent[100],
-    shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10))),
+    backgroundColor: Colors.cyanAccent,
     content: Text(
       '$text ',
-      style: TextStyle(fontSize: 18, color: Colors.black),
+      style: TextStyle(fontSize: 18, color: Colors.black87),
     ),
     duration: Duration(seconds: 3),
   );

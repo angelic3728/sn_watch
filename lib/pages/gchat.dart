@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:sn_watch/helper/constants.dart';
 import 'package:sn_watch/services/database.dart';
 import 'package:sn_watch/widget/message_tile.dart';
 
@@ -18,6 +19,7 @@ class GChatPage extends StatefulWidget {
 class _GChatPageState extends State<GChatPage> {
   Stream<QuerySnapshot> _chats;
   TextEditingController messageEditingController = new TextEditingController();
+  ScrollController _scrollController = new ScrollController();
 
   @override
   void initState() {
@@ -35,48 +37,62 @@ class _GChatPageState extends State<GChatPage> {
     return StreamBuilder(
       stream: _chats,
       builder: (context, snapshot) {
-        return snapshot.hasData
-            ? ListView.builder(
-                itemCount: snapshot.data.docs.length,
-                itemBuilder: (context, index) {
-                  bool showDate = false;
-                  if (index == 0 ||
-                      DateTime.fromMillisecondsSinceEpoch(
-                                  snapshot.data.docs[index].data()["time"])
-                              .toString()
-                              .split(" ")[0] !=
-                          DateTime.fromMillisecondsSinceEpoch(lastTime)
-                              .toString()
-                              .split(" ")[0]) {
-                    showDate = true;
-                    if (newDateList.length != snapshot.data.docs.length && newDateList.length == index) {
-                      newDateList.add(true);
-                    }
-                  } else {
-                    if (newDateList.length != snapshot.data.docs.length && newDateList.length == index) {
-                      newDateList.add(false);
-                    }
+        if (snapshot.hasData) {
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (_scrollController.hasClients)
+              _scrollController.animateTo(
+                  (_scrollController.position.maxScrollExtent),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOut);
+          });
+          if (snapshot.data.docs[snapshot.data.docs.length - 1]
+                  .data()['senderId'] !=
+              Constants.myUID)
+            DatabaseMethods().checkGMessages(widget.groupId, Constants.myUID);
+          return ListView.builder(
+              controller: _scrollController,
+              itemCount: snapshot.data.docs.length,
+              itemBuilder: (context, index) {
+                bool showDate = false;
+                if (index == 0 ||
+                    DateTime.fromMillisecondsSinceEpoch(
+                                snapshot.data.docs[index].data()["time"])
+                            .toString()
+                            .split(" ")[0] !=
+                        DateTime.fromMillisecondsSinceEpoch(lastTime)
+                            .toString()
+                            .split(" ")[0]) {
+                  showDate = true;
+                  if (newDateList.length != snapshot.data.docs.length &&
+                      newDateList.length == index) {
+                    newDateList.add(true);
                   }
-                  lastTime = snapshot.data.docs[index].data()["time"];
-                  return MessageTile(
-                      message: snapshot.data.docs[index].data()["message"],
-                      sender: snapshot.data.docs[index].data()["sender"],
-                      sentByMe: widget.userId ==
-                          snapshot.data.docs[index].data()["senderId"],
-                      time: snapshot.data.docs[index].data()["time"],
-                      showDate:
-                          (newDateList.length == snapshot.data.docs.length)
-                              ? newDateList[index]
-                              : showDate);
-                })
-            : Container();
+                } else {
+                  if (newDateList.length != snapshot.data.docs.length &&
+                      newDateList.length == index) {
+                    newDateList.add(false);
+                  }
+                }
+                lastTime = snapshot.data.docs[index].data()["time"];
+                return MessageTile(
+                    message: snapshot.data.docs[index].data()["message"],
+                    sender: snapshot.data.docs[index].data()["sender"],
+                    sentByMe: widget.userId ==
+                        snapshot.data.docs[index].data()["senderId"],
+                    time: snapshot.data.docs[index].data()["time"],
+                    showDate: (newDateList.length == snapshot.data.docs.length)
+                        ? newDateList[index]
+                        : showDate);
+              });
+        } else {
+          return Container();
+        }
       },
     );
   }
 
   _sendMessage() {
     if (messageEditingController.text.isNotEmpty) {
-      // print("uid 3 = " + widget.userId);
       Map<String, dynamic> chatMessageMap = {
         "message": messageEditingController.text,
         "sender": widget.userName,
@@ -99,6 +115,11 @@ class _GChatPageState extends State<GChatPage> {
         centerTitle: true,
         backgroundColor: Colors.black87,
         elevation: 0.0,
+        leading: new IconButton(
+            icon: new Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context, true);
+            }),
       ),
       body: Container(
         child: Stack(

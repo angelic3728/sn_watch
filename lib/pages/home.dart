@@ -35,7 +35,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   String _displayName = '';
   String _email = '';
-  Stream<QuerySnapshot> unreadMsgs;
+  Stream<List<QuerySnapshot>> unreadMsgs;
   Stream<List<QuerySnapshot>> unreadGMsgs;
   Map<String, int> unreadMsgsObj = {};
   Map<String, int> unreadGMsgsObj = {};
@@ -68,9 +68,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
   GestureDetector _buildButtonColumn(
       BuildContext context, Color color, String imgUrl, String label, flag) {
-    double itemWidth = (flag != 1)
-        ? MediaQuery.of(context).size.width * 0.4
-        : MediaQuery.of(context).size.width * 0.8;
+    final mq = MediaQuery.of(context).size;
+    double itemWidth = (flag != 1) ? mq.width * 0.4 : mq.width * 0.8;
 
     return GestureDetector(
       child: Container(
@@ -94,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           children: [
             new Image.asset(
               imgUrl,
-              width: MediaQuery.of(context).size.width * 0.22,
+              width: mq.width * 0.22,
             ),
             Container(
               margin: const EdgeInsets.only(top: 8),
@@ -185,8 +184,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context).size;
     Color color = Colors.blue[500];
     Widget buttonSection1 = Container(
+      padding: EdgeInsets.only(top: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -202,7 +203,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildButtonColumn(
-              context, color, "assets/images/w_icon.png", 'LINKS', 2),
+              context, color, "assets/images/w_icon.png", 'Links', 2),
           _buildButtonColumn(
               context, color, "assets/images/w_icon.png", 'Safety Stats', 3),
         ],
@@ -210,7 +211,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     );
 
     Widget buttonSection3 = Container(
-      padding: EdgeInsets.only(top: 25),
+      padding: EdgeInsets.only(top: 25, bottom: 10.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -223,20 +224,20 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     );
 
     Widget multiUnreadChats() {
-      return StreamBuilder2<QuerySnapshot, List<QuerySnapshot>>(
+      return StreamBuilder2<List<QuerySnapshot>, List<QuerySnapshot>>(
         streams: Tuple2(unreadMsgs, unreadGMsgs),
         builder: (context, snapshots) {
           if (snapshots.item1.hasData || snapshots.item2.hasData) {
             int unreadCnt = 0;
             int unreadGCnt = 0;
-            if (snapshots.item1.hasData &&
-                snapshots.item1.data.docs.length != 0) {
-              Iterable<QueryDocumentSnapshot> isUnreadMsgs = snapshots
-                  .item1.data.docs
-                  .where((doc) => doc.data()['isread'] == false);
-              String key = snapshots.item1.data.docs[0].id;
-              int value = isUnreadMsgs.length;
-              unreadMsgsObj[key] = value;
+            if (snapshots.item1.hasData && snapshots.item1.data.length != 0) {
+              snapshots.item1.data.forEach((cCollection) {
+                Iterable<QueryDocumentSnapshot> isUnreadMsgs = cCollection.docs
+                    .where((doc) => doc.data()['isread'] == false);
+                String key = cCollection.docs[0].id;
+                int value = isUnreadMsgs.length;
+                unreadMsgsObj[key] = value;
+              });
 
               unreadMsgsObj.forEach((key, value) {
                 unreadCnt += value;
@@ -248,14 +249,20 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 Iterable<QueryDocumentSnapshot> isUnreadGMsgs = gCollection.docs
                     .where((doc) =>
                         doc.data()['isreads'][Constants.myUID] == false);
-                String key = gCollection.docs[0].id;
-                int value = isUnreadGMsgs.length;
-                unreadGMsgsObj[key] = value;
+                if (isUnreadGMsgs.length != 0) {
+                  String key = gCollection.docs[0].id;
+                  int value = isUnreadGMsgs.length;
+                  print(key);
+                  print(value.toString());
+                  unreadGMsgsObj[key] = value;
+                }
               });
 
-              unreadGMsgsObj.forEach((key, value) {
-                unreadGCnt += value;
-              });
+              if (unreadGMsgsObj.length != 0) {
+                unreadGMsgsObj.forEach((key, value) {
+                  unreadGCnt += value;
+                });
+              }
             }
 
             return GestureDetector(
@@ -304,8 +311,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                           ),
                         )),
               onTap: () {
-                Navigator.push(context,
-                    CupertinoPageRoute(builder: (context) => ChatRoom()));
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    CupertinoPageRoute(builder: (context) => ChatRoom()),
+                    ModalRoute.withName("MyHomePage"));
               },
             );
           } else {
@@ -326,7 +335,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        backgroundColor: Colors.blue[900],
+        backgroundColor: Colors.blueAccent[200],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: new Center(child: new Text("Summit Neighborhood Watch")),
@@ -337,17 +346,24 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         child: Column(
           children: [
             Container(
-              height: MediaQuery.of(context).size.height -
-                  121 -
-                  MediaQuery.of(context).padding.top,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  buttonSection1,
-                  buttonSection2,
-                  buttonSection3,
-                ],
-              ),
+              height: mq.height - 121 - MediaQuery.of(context).padding.top,
+              alignment: Alignment.center,
+              child: (mq.width > mq.height)
+                  ? ListView(
+                      children: [
+                        buttonSection1,
+                        buttonSection2,
+                        buttonSection3,
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        buttonSection1,
+                        buttonSection2,
+                        buttonSection3,
+                      ],
+                      mainAxisAlignment: MainAxisAlignment.center,
+                    ),
             ),
             chatButton,
           ],
@@ -408,24 +424,21 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     HelperFunctions.saveUIDSharedPreference("");
     HelperFunctions.saveUserNameSharedPreference("");
     HelperFunctions.saveUserEmailSharedPreference("");
-    snackbar(
-        context, 'Logged out Successfully...', _scaffoldKey, Colors.black87);
+    snackbar(context, 'Logged out Successfully...', _scaffoldKey);
     Navigator.push(
         context, CupertinoPageRoute(builder: (context) => LoginPage()));
   }
 }
 
-snackbar(BuildContext context, String text,
-    GlobalKey<ScaffoldState> _scaffoldKey, Color color) {
+snackbar(
+    BuildContext context, String text, GlobalKey<ScaffoldState> _scaffoldKey) {
   final snackBar = SnackBar(
-    backgroundColor: color,
-    shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10))),
+    backgroundColor: Colors.cyanAccent,
     content: Text(
       '$text ',
-      style: TextStyle(fontSize: 18),
+      style: TextStyle(fontSize: 18, color: Colors.black87),
     ),
-    duration: Duration(seconds: 2),
+    duration: Duration(seconds: 3),
   );
   ScaffoldMessenger.of(context).removeCurrentSnackBar();
   ScaffoldMessenger.of(context).showSnackBar(snackBar);

@@ -41,7 +41,8 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   Container(
                     alignment: Alignment.center,
-                    height: (mq.height - 50 - MediaQuery.of(context).padding.top),
+                    height:
+                        (mq.height - 50 - MediaQuery.of(context).padding.top),
                     child: ListView(
                       children: [
                         Container(
@@ -160,7 +161,8 @@ class _LoginPageState extends State<LoginPage> {
                                         Navigator.pushAndRemoveUntil(
                                             context,
                                             CupertinoPageRoute(
-                                                builder: (context) => MyHomePage()),
+                                                builder: (context) =>
+                                                    MyHomePage()),
                                             ModalRoute.withName("/LoginPage"));
                                       }
                                     }
@@ -220,7 +222,8 @@ class _LoginPageState extends State<LoginPage> {
                                         Navigator.pushAndRemoveUntil(
                                             context,
                                             CupertinoPageRoute(
-                                                builder: (context) => MyHomePage()),
+                                                builder: (context) =>
+                                                    MyHomePage()),
                                             ModalRoute.withName("/LoginPage"));
                                       }
                                     }
@@ -319,11 +322,14 @@ class _LoginPageState extends State<LoginPage> {
         idToken: googleAuth.idToken,
       );
 
+      print(googleUser.email);
+
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithCredential(credential);
       final email = googleUser.email;
       final uid = userCredential.user.uid;
       bool isEmpty = await databaseMethods.checkGoogleUser(email);
+      print(isEmpty.toString());
       if (!isEmpty) {
         bool isTriedUser = await databaseMethods.isTriedUser(email, uid);
         if (!isTriedUser) {
@@ -361,12 +367,10 @@ class _LoginPageState extends State<LoginPage> {
 snackbar(
     BuildContext context, String text, GlobalKey<ScaffoldState> _scaffoldKey) {
   final snackBar = SnackBar(
-    backgroundColor: Colors.black87,
-    shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10))),
+    backgroundColor: Colors.cyanAccent,
     content: Text(
       '$text ',
-      style: TextStyle(fontSize: 18),
+      style: TextStyle(fontSize: 18, color: Colors.black87),
     ),
     duration: Duration(seconds: 3),
   );

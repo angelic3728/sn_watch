@@ -47,7 +47,7 @@ class _QuestionsState extends State<QuestionsPage> {
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        backgroundColor: Colors.blue[900],
+        backgroundColor: Colors.blueAccent[200],
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         leading: IconButton(
@@ -63,11 +63,12 @@ class _QuestionsState extends State<QuestionsPage> {
             child: new Text(widget.title, style: TextStyle(fontSize: 20))),
       ),
       body: Container(
+          alignment: Alignment.center,
           padding: EdgeInsets.only(
               top: 10, bottom: MediaQuery.of(context).viewInsets.bottom),
           child: ListView(
             shrinkWrap: true,
-            padding: EdgeInsets.only(left: 20, right: 20),
+            padding: EdgeInsets.only(left: 30, right: 30),
             children: <Widget>[
               Container(
                   margin: EdgeInsets.only(top: 40),
@@ -89,7 +90,7 @@ class _QuestionsState extends State<QuestionsPage> {
                         enabled: false),
                   )),
               Container(
-                  margin: EdgeInsets.only(top: 20),
+                  margin: EdgeInsets.only(top: 30),
                   child: TextFormField(
                     controller: lastNameController,
                     style: new TextStyle(fontSize: 20),
@@ -107,7 +108,7 @@ class _QuestionsState extends State<QuestionsPage> {
                         enabled: false),
                   )),
               Container(
-                  margin: EdgeInsets.only(top: 20),
+                  margin: EdgeInsets.only(top: 30),
                   child: TextFormField(
                     controller: emailController,
                     style: new TextStyle(fontSize: 20),
@@ -125,7 +126,7 @@ class _QuestionsState extends State<QuestionsPage> {
                         enabled: false),
                   )),
               Container(
-                  margin: EdgeInsets.only(top: 20),
+                  margin: EdgeInsets.only(top: 30),
                   child: TextField(
                     controller: commentController,
                     decoration: InputDecoration(
@@ -145,7 +146,7 @@ class _QuestionsState extends State<QuestionsPage> {
                     maxLines: null,
                   )),
               Container(
-                margin: EdgeInsets.only(top: 20, bottom: 20),
+                margin: EdgeInsets.only(top: 50, bottom: 50),
                 child: isSending
                     ? Container(
                         decoration: new BoxDecoration(
@@ -264,12 +265,10 @@ class _QuestionsState extends State<QuestionsPage> {
 snackbar(
     BuildContext context, String text, GlobalKey<ScaffoldState> _scaffoldKey) {
   final snackBar = SnackBar(
-    backgroundColor: Colors.blueGrey,
-    shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10))),
+    backgroundColor: Colors.cyanAccent,
     content: Text(
       '$text ',
-      style: TextStyle(fontSize: 18),
+      style: TextStyle(fontSize: 18, color: Colors.black87),
     ),
     duration: Duration(seconds: 3),
   );

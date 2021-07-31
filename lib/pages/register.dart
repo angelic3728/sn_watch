@@ -32,14 +32,17 @@ class _RegisterPageState extends State<RegisterPage> {
       backgroundColor: Colors.white,
       body: Center(
           child: Container(
-              padding:
-                  EdgeInsets.only(left: mq.width * 0.1, right: mq.width * 0.1, bottom: MediaQuery.of(context).viewInsets.bottom),
+              padding: EdgeInsets.only(
+                  left: mq.width * 0.1,
+                  right: mq.width * 0.1,
+                  bottom: MediaQuery.of(context).viewInsets.bottom),
               alignment: Alignment.center,
               child: ListView(
                 children: [
                   Container(
                     alignment: Alignment.center,
-                    height: (mq.height - 50 - MediaQuery.of(context).padding.top),
+                    height:
+                        (mq.height - 50 - MediaQuery.of(context).padding.top),
                     child: ListView(
                       children: [
                         Container(
@@ -324,7 +327,7 @@ class _RegisterPageState extends State<RegisterPage> {
               "userEmail": email.toLowerCase(),
               "authors": [user.uid],
               "uid": user.uid,
-              "groups":[],
+              "groups": [],
               "searchKeywords": searchKeywords
             };
 
@@ -347,12 +350,10 @@ class _RegisterPageState extends State<RegisterPage> {
 snackbar(
     BuildContext context, String text, GlobalKey<ScaffoldState> _scaffoldKey) {
   final snackBar = SnackBar(
-    backgroundColor: Colors.black87,
-    shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10))),
+    backgroundColor: Colors.cyanAccent,
     content: Text(
       '$text ',
-      style: TextStyle(fontSize: 18),
+      style: TextStyle(fontSize: 18, color: Colors.black87),
     ),
     duration: Duration(seconds: 3),
   );

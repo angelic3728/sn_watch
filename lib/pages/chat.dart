@@ -154,12 +154,12 @@ class _ChatState extends State<Chat> {
                           height: 40,
                           width: 40,
                           decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: Colors.blueAccent,
                               borderRadius: BorderRadius.circular(40)),
                           padding: EdgeInsets.all(8),
                           child: Icon(
                             Icons.send_rounded,
-                            color: Colors.greenAccent[400],
+                            color: Colors.white,
                             size: 25,
                           )),
                     ),

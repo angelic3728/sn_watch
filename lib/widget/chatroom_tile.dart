@@ -24,7 +24,7 @@ class ChatRoomsTile extends StatelessWidget {
                   builder: (_) =>
                       new Chat(chatRoomId: chatRoomId, userName: userName)),
             )
-            .then((val) => val ? getRequests() : null);
+            .then((val) => (val == null || !val) ? null : getRequests());
       },
       child: Container(
         margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),

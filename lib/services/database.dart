@@ -128,7 +128,7 @@ class DatabaseMethods {
                   allSnapshots.add(snapshot);
                 })
               });
-      return Rx.merge(allSnapshots);
+      return Rx.zipList(allSnapshots);
     } catch (e) {
       print(e.toString());
       return null;
@@ -190,6 +190,39 @@ class DatabaseMethods {
     }
   }
 
+  getUnreadGChats(String myUID, String userName) async {
+    String memberStr = myUID + "_" + userName;
+    Map<String, int> allSnapshots = {};
+    try {
+      await groupCollection
+          .where('members', arrayContains: memberStr)
+          .get()
+          .then((data) => {
+                data.docs.forEach((doc) {
+                  String key;
+                  int value;
+                  groupCollection
+                      .doc(doc.id)
+                      .collection('messages')
+                      .where('senderId', isNotEqualTo: myUID)
+                      .get()
+                      .then((data2) => {
+                            key = doc.id,
+                            value = data2.docs
+                                .where((doc2) =>
+                                    doc2.data()['isreads'][myUID] == false)
+                                .length,
+                            allSnapshots[key] = value
+                          });
+                })
+              });
+      return allSnapshots;
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
   checkMessages(String roomID, String myUID) {
     chatRoomCollection
         .doc(roomID)
@@ -203,6 +236,26 @@ class DatabaseMethods {
                     .collection('chats')
                     .doc(doc.id)
                     .update({'isread': true});
+              })
+            });
+  }
+
+  checkGMessages(String groupID, String myUID) {
+    groupCollection
+        .doc(groupID)
+        .collection('messages')
+        .where("isreads.${myUID}", isEqualTo: false)
+        .get()
+        .then((data) => {
+              data.docs.forEach((doc) async {
+                print(doc.toString());
+                Map<String, dynamic> isreads = doc.data()['isreads'];
+                isreads[myUID] = true;
+                groupCollection
+                    .doc(groupID)
+                    .collection('messages')
+                    .doc(doc.id)
+                    .update({'isreads': isreads});
               })
             });
   }

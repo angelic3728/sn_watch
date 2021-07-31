@@ -14,14 +14,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "159480393236-44jvogaqtrmvf9u29v2tegvd1u37drko.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.sn_watch",
-            "certificate_hash": "d8a0ee8a42c27ba4960ec4494b9cb07215f95952"
-          }
-        },
-        {
           "client_id": "159480393236-9h691je765ve82s1jugril8uf4t0obug.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -39,10 +31,10 @@
               "client_type": 3
             },
             {
-              "client_id": "159480393236-6rfn76210552msra0ff4u3fun1l9ovdj.apps.googleusercontent.com",
+              "client_id": "159480393236-3r61h69mebhcr198hq1q6p76r8633b1i.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "sn.watch.ios"
+                "bundle_id": "com.example.snWatch"
               }
             }
           ]
